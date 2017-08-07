@@ -301,6 +301,12 @@ uint rtw_notch_filter = RTW_NOTCH_FILTER;
 module_param(rtw_notch_filter, uint, 0644);
 MODULE_PARM_DESC(rtw_notch_filter, "0:Disable, 1:Enable, 2:Enable only for P2P");
 
+#ifdef CONFIG_SW_LED
+int rtw_led_enable = 1;
+module_param(rtw_led_enable, int, 0644);
+MODULE_PARM_DESC(rtw_led_enable,"Enable status LED");
+#endif //CONFIG_SW_LED
+
 static uint loadparam(PADAPTER padapter, _nic_hdl pnetdev);
 int _netdev_open(struct net_device *pnetdev);
 int netdev_open (struct net_device *pnetdev);
@@ -926,6 +932,10 @@ _func_enter_;
 	registry_par->ext_iface_num = (u8)rtw_ext_iface_num;
 #endif //CONFIG_MULTI_VIR_IFACES
 
+#ifdef CONFIG_SW_LED
+       registry_par->led_enable = (u8)rtw_led_enable;
+#endif //CONFIG_SW_LED
+
 _func_exit_;
 
 	return status;
@@ -999,8 +1009,14 @@ unsigned int rtw_classify8021d(struct sk_buff *skb)
 	return dscp >> 5;
 }
 
-static u16 rtw_select_queue(struct net_device *dev, struct sk_buff *skb, void *accel_priv, select_queue_fallback_t fallback)
-{
+static u16 rtw_select_queue(struct net_device *dev, struct sk_buff *skb
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 13, 0))
+			    , void *unused
+#endif
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 14, 0))
+			    , select_queue_fallback_t fallback
+#endif
+){
 	_adapter	*padapter = rtw_netdev_priv(dev);
 	struct mlme_priv *pmlmepriv = &padapter->mlmepriv;
 
